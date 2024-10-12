@@ -63,12 +63,12 @@ export function Navbar({ session }: NavbarProps) {
             )}
             {!session && (
               <div className="flex items-center space-x-2">
-                <Link href="/sign-up">
+                {/* <Link href="/sign-up">
                   <Button variant="default" size="sm">
                     <UserPlus className="mr-2 h-4 w-4" />
                     Sign Up
                   </Button>
-                </Link>
+                </Link> */}
                 <Link href="/api/auth/signin">
                   <Button variant="outline" size="sm">
                     <LogIn className="mr-2 h-4 w-4" />
