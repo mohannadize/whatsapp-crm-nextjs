@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
-import { and, eq, like, or } from "drizzle-orm";
+import { and, eq, like, or, sql } from "drizzle-orm";
 import { contacts, profiles } from "@/server/db/schema";
 
 const contactSchema = z.object({
@@ -82,19 +82,32 @@ export const contactsRouter = createTRPCRouter({
       const [profile] = await db
         .select()
         .from(profiles)
-        .where(and(eq(profiles.id, profileId), eq(profiles.userId, ctx.session.user.id)));
+        .where(
+          and(
+            eq(profiles.id, profileId),
+            eq(profiles.userId, ctx.session.user.id),
+          ),
+        );
       if (!profile) {
         throw new Error("Profile not found");
       }
-      const newContacts = await db
-        .insert(contacts)
-        .values(
-          data.map((contact) => ({
-            ...contact,
-            createdById: ctx.session.user.id,
-            profileId: profile.id,
-          })),
-        ).returning();
+      const newContactsData = data.map((contact) => ({
+        ...contact,
+        createdById: ctx.session.user.id,
+        profileId: profile.id,
+      }));
+
+      const batchSize = 500;
+      const newContacts = [];
+
+      for (let i = 0; i < newContactsData.length; i += batchSize) {
+        const batch = newContactsData.slice(i, i + batchSize);
+        const batchResult = await db
+          .insert(contacts)
+          .values(batch)
+          .returning();
+        newContacts.push(...batchResult);
+      }
       return newContacts;
     }),
   getContacts: protectedProcedure
@@ -108,25 +121,35 @@ export const contactsRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       if (!input.profileId) {
-        return [];
+        return { contacts: [], totalContacts: 0, totalPages: 0 };
       }
+
+      const whereClause = and(
+        eq(contacts.profileId, input.profileId),
+        eq(contacts.createdById, ctx.session.user.id),
+        input.search
+          ? or(
+              like(contacts.name, `%${input.search}%`),
+              like(contacts.phone, `%${input.search}%`),
+            )
+          : undefined,
+      );
+
+      const results = await db
+        .select({ totalContacts: sql<number>`count(*)` })
+        .from(contacts)
+        .where(whereClause);
+      const totalContacts = results[0]?.totalContacts ?? 0;
+
       const contactsData = await db
         .select()
         .from(contacts)
-        .where(
-          and(
-            eq(contacts.profileId, input.profileId),
-            eq(contacts.createdById, ctx.session.user.id),
-            input.search
-              ? or(
-                  like(contacts.name, `%${input.search}%`),
-                  like(contacts.phone, `%${input.search}%`),
-                )
-              : undefined,
-          ),
-        )
+        .where(whereClause)
         .limit(input.limit)
         .offset((input.page - 1) * input.limit);
-      return contactsData;
+
+      const totalPages = Math.ceil(totalContacts / input.limit);
+
+      return { contacts: contactsData, totalContacts, totalPages };
     }),
 });

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ProfileSelector } from "./profiles-selector";
 import { GearIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { type Session } from "next-auth";
 
 type NavbarProps = {
@@ -25,7 +25,7 @@ export function Navbar({ session }: NavbarProps) {
   const navItems = [
     { name: "Dashboard", href: "/" },
     { name: "Contacts", href: "/contacts" },
-    // { name: 'Profiles', href: '/profiles' },
+    { name: "Actions Log", href: "/actions" },
   ];
 
   return (

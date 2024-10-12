@@ -5,7 +5,6 @@ import {
   type NextAuthOptions,
 } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
-// import DiscordProvider from "next-auth/providers/discord";
 import GoogleProvider from "next-auth/providers/google";
 
 import { env } from "@/env";
@@ -16,8 +15,6 @@ import {
   users,
   verificationTokens,
 } from "@/server/db/schema";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { eq } from "drizzle-orm";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -68,48 +65,6 @@ export const authOptions: NextAuthOptions = {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
-    // CredentialsProvider({
-    //   name: "Credentials",
-    //   authorize: async (credentials) => {
-    //     const { username, password } = credentials as {
-    //       username: string;
-    //       password: string;
-    //     };
-
-    //     const [user] = await db
-    //       .select()
-    //       .from(users)
-    //       .where(eq(users.username, username));
-
-    //     if (!user) {
-    //       return null;
-    //     }
-
-    //     const passwordMatch = await verifyPassword(password, user.password);
-
-    //     if (!passwordMatch) {
-    //       return null;
-    //     }
-
-    //     return user;
-    //   },
-    //   credentials: {
-    //     username: {
-    //       label: "Username",
-    //       placeholder: "Username",
-    //       type: "text",
-    //     },
-    //     password: {
-    //       label: "Password",
-    //       placeholder: "Password",
-    //       type: "password",
-    //     },
-    //   },
-    // }),
-    // DiscordProvider({
-    //   clientId: env.DISCORD_CLIENT_ID,
-    //   clientSecret: env.DISCORD_CLIENT_SECRET,
-    // }),
     /**
      * ...add more providers here.
      *

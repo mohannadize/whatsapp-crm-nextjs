@@ -15,9 +15,8 @@ type DashboardProps = {
 export default function Dashboard({ session }: DashboardProps) {
   const [isClient, setIsClient] = useState(false);
   const { selectedProfile, refetchProfiles } = useProfileContext();
-  const { data: contacts } = api.contacts.getContacts.useQuery({
-    profileId: selectedProfile?.id ?? 0,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<
     Profile["templates"][number] | undefined
   >(undefined);
@@ -43,6 +42,13 @@ export default function Dashboard({ session }: DashboardProps) {
     setIsClient(true);
   }, []);
 
+  const { data: contactsData } = api.contacts.getContacts.useQuery({
+    profileId: selectedProfile?.id ?? 0,
+    page: currentPage,
+    limit: 10000,
+    search: searchQuery,
+  });
+
   if (!isClient) {
     return null;
   }
@@ -54,13 +60,11 @@ export default function Dashboard({ session }: DashboardProps) {
     return <div>No profile selected</div>;
   }
 
-  console.log(selectedProfile.templates);
-
   return (
     <main>
       <div>
         <RecipientList
-          recipients={contacts ?? []}
+          recipients={contactsData?.contacts ?? []}
           onSelectRecipients={setSelectedRecipients}
         />
         <hr className="my-4 w-full border-red-600" />

@@ -1,4 +1,4 @@
-import { Profiles } from '@/app/_components/profiles';
+import { Profiles } from '@/app/profiles/profiles';
 
 export default function ProfilesPage() {
   return (

@@ -51,7 +51,12 @@ export const actions = createTable(
     createdById: text("created_by_id", { length: 256 }).notNull().references(() => users.id, {
       onDelete: "cascade",
     }),
-    activityLog: text("activity_log", { mode: "json" }).notNull().$type<Activity[]>().default([]),
+    activityLog: text("activity_log", { mode: "json" }).notNull().$type<Activity[]>().$defaultFn(() => [{
+      timestamp: Date.now(),
+      status: "PENDING",
+      message: "Action created",
+    }]),
+    createdAt: int("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   },
   (table) => ({
     statusIdx: index("action_status_idx").on(table.status),
@@ -59,6 +64,7 @@ export const actions = createTable(
     templateIdIdx: index("action_template_id_idx").on(table.templateId),
     profileIdIdx: index("action_profile_id_idx").on(table.profileId),
     createdByIdIdx: index("action_created_by_id_idx").on(table.createdById),
+    createdAtIdx: index("action_created_at_idx").on(table.createdAt),
   })
 );
 

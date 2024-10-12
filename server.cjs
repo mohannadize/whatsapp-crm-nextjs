@@ -5,21 +5,39 @@ const next = require("next");
 const cron = require("node-cron");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
-const port = 3000;
+const hostname = process.env.NEXTAUTH_URL ?? "localhost";
+const port = process.env.PORT ?? 80;
 // when using middleware `hostname` and `port` must be provided below
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 let isProcessing = false;
+
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 cron.schedule("*/2 * * * *", async () => {
   if (isProcessing) {
     return;
   }
   isProcessing = true;
-  await fetch(`http://${hostname}:${port}/api/cron`, {
-    method: "POST",
-  });
+  console.log("Running cron job");
+  try {
+    await fetch(`http://${hostname}:${port}/api/cron`, {
+      method: "POST",
+      body: JSON.stringify({
+        password: process.env.CRON_PASSWORD,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      timeout: Infinity,
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    });
+  } catch (err) {
+    console.error("Cron job failed:", err.message);
+  }
   isProcessing = false;
 });
 
